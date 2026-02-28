@@ -1,0 +1,25 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # ─── Métricas de todas as apps AgroSolutions (via OTel Collector Prometheus exporter) ──────
+  # O OTel Collector agrega as métricas de TODAS as aplicações num único endpoint :8889.
+  # A diferenciação entre serviços é feita pelas labels que vêm dos resource attributes
+  # de cada app (service_name, job, deployment_environment) graças a:
+  #   resource_to_telemetry_conversion: enabled: true  (em otel-collector-config.yaml)
+  # Para filtrar uma app específica num painel Grafana use, por exemplo:
+  #   {job="agrosolutions", service_name="AzFunctions.RecebeDadosSensor"}
+  - job_name: agrosolutions          # label job="agrosolutions" no Prometheus
+    static_configs:
+      - targets: ["otel-collector:8889"]
+
+  # ─── Prometheus self-monitoring ───────────────────────────────────────────
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # ─── OTel Collector self-monitoring ───────────────────────────────────────
+  - job_name: otel-collector
+    static_configs:
+      - targets: ["otel-collector:8888"]

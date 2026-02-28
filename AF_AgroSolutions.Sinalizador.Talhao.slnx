@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AF_AgroSolutions.Sinalizador.Talhao/AF_AgroSolutions.Sinalizador.Talhao.csproj" />
+    <Project Path="src/AgroSolutions.Busines/AgroSolutions.Busines.csproj" />
+    <Project Path="src/AgroSolutions.Domain/AgroSolutions.Domain.csproj" />
+    <Project Path="src/AgroSolutions.Infra/AgroSolutions.Infra.csproj" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="tests/AF_AgroSolutions.Sinalizador.Talhao.Tests/AF_AgroSolutions.Sinalizador.Talhao.Tests.csproj" Id="41aecd51-229c-4f9b-916b-7a67315ec548" />
+  </Folder>
+</Solution>

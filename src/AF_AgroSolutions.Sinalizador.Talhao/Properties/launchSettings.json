@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "AF_AgroSolutions.Sinalizador.Talhao": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7219"
+    }
+  }
+}

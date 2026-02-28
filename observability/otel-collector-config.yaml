@@ -1,0 +1,95 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# OpenTelemetry Collector — Configuração de roteamento
+#
+# Fluxo:
+#   App (OTLP gRPC) → Receiver → Processors → Exporters
+#     traces  → Tempo  (OTLP gRPC interno)
+#     metrics → Prometheus exporter (scrape endpoint :8889)
+#     logs    → Loki
+# ─────────────────────────────────────────────────────────────────────────────
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 5s
+    send_batch_size: 512
+
+  # Adiciona atributos de resource apenas se a aplicação não os definiu (action: insert).
+  # Com action: upsert, o Collector sobrescreveria o job de TODAS as apps para "agrosolutions",
+  # impedindo diferenciação entre serviços. Com insert, cada app mantém seu próprio job;
+  # o fallback "agrosolutions" é aplicado apenas a apps que não definiram essa chave.
+  resource:
+    attributes:
+      - key: job
+        value: agrosolutions
+        action: insert   # NÃO sobrescreve — respeita o job definido pela própria app
+
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 256
+    spike_limit_mib: 64
+
+exporters:
+  # ── Traces → Tempo ──────────────────────────────────────────────────────────
+  otlp/tempo:
+    endpoint: tempo:4317   # Porta OTLP gRPC interna do Tempo
+    tls:
+      insecure: true
+
+  # ── Metrics → Prometheus (scrape endpoint) ──────────────────────────────────
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+    # O resource attribute "service.name" vira a label "service_name";
+    # o job vem do prometheus.yml scrape_configs / job_name = "agrosolutions"
+    resource_to_telemetry_conversion:
+      enabled: true   # converte resource attrs em labels Prometheus
+
+  # ── Logs → Loki ─────────────────────────────────────────────────────────────
+  loki:
+    endpoint: http://loki:3100/loki/api/v1/push
+    tls:
+      insecure: true
+    # Labels de stream do Loki. São indexados e usados para filtrar logs.
+    # Mantenha poucos e de baixa cardinalidade (job, service_name, environment).
+    # NÃO adicione traceID ou outros campos de alta cardinalidade aqui — vão para os campos do log.
+    default_labels_enabled:
+      exporter: false
+      job: true        # {job="agrosolutions"} — agrupa todo o ecossistema
+      instance: false
+      level: false
+    labels:
+      resource:
+        job:              "job"            # {job="agrosolutions"}
+        service_name:     "service.name"  # {service_name="AzFunctions.RecebeDadosSensor"}
+        # Adicionar "deployment.environment" permite filtrar por ambiente (prod, staging, dev)
+        deployment_environment: "deployment.environment"
+
+service:
+  pipelines:
+    traces:
+      receivers:  [otlp]
+      processors: [memory_limiter, resource, batch]
+      exporters:  [otlp/tempo]
+
+    metrics:
+      receivers:  [otlp]
+      processors: [memory_limiter, resource, batch]
+      exporters:  [prometheus]
+
+    logs:
+      receivers:  [otlp]
+      processors: [memory_limiter, resource, batch]
+      exporters:  [loki]
+
+  telemetry:
+    logs:
+      level: warn
+    metrics:
+      address: 0.0.0.0:8888   # expõe self-monitoring para todas as interfaces da rede Docker

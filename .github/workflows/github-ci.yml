@@ -1,0 +1,21 @@
+ name: .NET API CI/CD Pipeline
+ on:
+   push:
+     branches:
+       - '**'
+   pull_request:
+     branches:
+       - '**'
+   workflow_dispatch:
+ jobs:
+   build-and-deploy:
+     uses: Grupo-Postech-Fiap05/pipeline-net-core/.github/workflows/app-dispatcher.yml@662f2db3cdab3dbdfd1717cf84f0f6988e72ed5a
+     with:
+       nome_projeto: 'AF_AgroSolutions.Sinalizador.Talhao'
+       nome_csproj: 'AF_AgroSolutions.Sinalizador.Talhao' #informar apenas o nome sem o csproj apenas o nome do projeto
+       nome_csproj_tests: 'AF_AgroSolutions.Sinalizador.Talhao.Tests' #informar apenas o nome sem o csproj apenas o nome do projeto
+       nome_imagem: 'az-func-sensor-talhao'
+       porta_pod: 8999
+
+
+
